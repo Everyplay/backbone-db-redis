@@ -1,5 +1,5 @@
 ## Usage
-
+[![Build Status](https://travis-ci.org/Everyplay/backbone-db-redis.png?branch=master)](https://travis-ci.org/Everyplay/backbone-db-redis)
 ```js
 
 var store = new RedisDb('mymodel', redis.createClient());
