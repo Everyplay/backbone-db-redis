@@ -1,10 +1,10 @@
-var _ = require('underscore')
-  , Backbone = require('backbone')
-  , Db = require('backbone-db')
-  , redis = require('redis')
-  , debug = require('debug')('backbone-db-redis')
-  , indexing = require('./lib/indexing')
-  , query = require('./lib/query');
+var _ = require('underscore'),
+  Backbone = require('backbone'),
+  Db = require('backbone-db'),
+  redis = require('redis'),
+  debug = require('debug')('backbone-db-redis'),
+  indexing = require('./lib/indexing'),
+  query = require('./lib/query');
 
 
 Backbone.RedisDb = function(name, client) {

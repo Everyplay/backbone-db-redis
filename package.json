@@ -19,6 +19,9 @@
     "when": "~2.7.0"
   },
   "devDependencies": {
-    "mocha": "~1.15.1"
+    "mocha": "~1.15.1",
+    "istanbul": "~0.2.4",
+    "chai": "~1.9.0",
+    "jshint": "~2.4.3"
   }
 }
