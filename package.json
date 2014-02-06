@@ -1,6 +1,6 @@
 {
   "name": "backbone-db-redis",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Redis driver for Backbone.Db",
   "main": "index.js",
   "scripts": {
@@ -14,9 +14,9 @@
     "underscore": "~1.4.4",
     "redis": "~0.8.4",
     "debug": "~0.7.2",
-    "backbone-db": "~0.4.0",
-    "backbone-promises": "~0.2.0",
-    "when": "~2.7.0"
+    "backbone-db": "~0.4",
+    "backbone-promises": "~0.2",
+    "when": "~2.8.0"
   },
   "devDependencies": {
     "mocha": "~1.15.1",
