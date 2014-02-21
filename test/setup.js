@@ -10,7 +10,8 @@ var redis = require('redis');
 var MyModel = exports.MyModel = Model.extend({
   db: store,
   sync: RedisDb.sync,
-  type: 'mymodels',
+  type: 'mymodel',
+  dbBaseKey: 'mymodels',
   url: function() {
     var key = this.type;
     if(!this.isNew()) {

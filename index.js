@@ -300,7 +300,8 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       data: model.attributes,
       prevData: operation === 'delete' ? model.attributes : model.previousAttributes(),
       operation: operation,
-      baseKey: model.collection ? model.collection.type : model.type,
+      // dbBaseKey defines a namespace for Redis keys
+      baseKey: model.dbBaseKey || (model.collection ? model.collection.type : model.type),
       id: model.id
     };
     indexing.updateIndexes(indexingOpts, callback);

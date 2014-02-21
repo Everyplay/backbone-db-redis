@@ -115,7 +115,7 @@ describe('Indexing tests', function() {
   it('should create indexes when model\'s collection is not defined', function(done) {
     function checkIndexes() {
       redis.keys('test:i:mymodel*', function(err, keys) {
-        assert(keys.indexOf('test:i:mymodels:name:x') > -1);
+        assert(keys.indexOf('test:i:mymodels:name:x') > -1, 'index test:i:mymodels:name:x was not created');
         done();
       });
     }
