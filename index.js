@@ -301,7 +301,8 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   },
 
   findKeys: function(collection, options, cb) {
-    var prefix = options.prefix || (this.name + ':');
+    var prefix = options.prefix || (this.getIdKey(collection, {}));
+    if(prefix.indexOf(':', prefix.length - 1) === -1) prefix += ':';
     this.redis.keys(prefix + options.keys + '*', cb);
   },
 
