@@ -60,8 +60,8 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
 
   findAll: function(model, options, callback) {
     options = options || {};
-    debug('findAll ' + model.url());
     var collectionKey = this.getIdKey(model, options);
+    debug('findAll ' + collectionKey);
     // if Collection
     if (model.model) {
       var m = new model.model();
@@ -84,7 +84,6 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
 
   find: function(model, options, callback) {
     var key = this.getIdKey(model, options);
-
     debug('find: ' + key);
     this.redis.get(key, function(err, data) {
       data = data && JSON.parse(data);
