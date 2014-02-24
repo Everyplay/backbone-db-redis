@@ -93,7 +93,7 @@ describe('Query tests', function() {
     collection
       .fetch(opts)
       .then(function() {
-        assert(collection.length === 4);
+        assert(collection.length === 4, 'collection should have 4 items, had ' + collection.length);
         var values = collection.pluck('value');
         assert(inAscendingOrder(values));
         done();

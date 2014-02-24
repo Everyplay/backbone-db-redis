@@ -10,13 +10,13 @@ var _ = require('underscore'),
 Backbone.RedisDb = function(name, client) {
   this.name = name || "";
   this.redis = client;
-  if(!this.redis) {
+  if (!this.redis) {
     this.redis = redis.createClient();
   }
 };
 
 Backbone.RedisDb.prototype.key = function(key) {
-  if(this.name === "") {
+  if (this.name === "") {
     return key;
   } else {
     return this.name + ':' + key;
@@ -28,31 +28,44 @@ Backbone.RedisDb.sync = Db.sync;
 _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   createClient: function() {
     var self = this;
-    if(this.redis) {
+    if (this.redis) {
       return redis.createClient(this.redis.port, this.redis.host);
     }
   },
 
-  _getKey: function (model, options) {
+  // get key for set where ids are stored
+  getIdKey: function(model, options) {
     var key = '';
-
-    if(options.url) {
+    if (options.url) {
       key = typeof options.url === "function" ? options.url() : options.url;
-    } else if(model.url) {
+    } else if (model.url) {
       key = typeof model.url === "function" ? model.url() : model.url;
-    }  else if(model.id) {
+    } else if (model.id) {
       key = model.id;
     }
     return this.name + (key ? ':' + key : '');
   },
 
+  // get Redis key for set, where key/value is stored
+  getValueSetKey: function(model, key, val) {
+    var baseKey = model.dbBaseKey || model.type;
+    return this.name + ':i:' + baseKey + ':' + key + ':' + val;
+  },
+
+  // get Redis key for set for sorted property
+  getSortSetKey: function(model, sortProp) {
+    var baseKey = model.dbBaseKey || model.type;
+    return this.name + ':i:' + baseKey + ':' + sortProp;
+  },
+
   findAll: function(model, options, callback) {
     options = options || {};
     debug('findAll ' + model.url());
-    var collectionKey = this._getKey(model, options);
-    if(model.model) {
+    var collectionKey = this.getIdKey(model, options);
+    // if Collection
+    if (model.model) {
       var m = new model.model();
-      var modelKey = this._getKey(m, {});
+      var modelKey = this.getIdKey(m, {});
       var dbOpts = {
         db: this,
         model: model,
@@ -70,7 +83,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   },
 
   find: function(model, options, callback) {
-    var key = this._getKey(model, options);
+    var key = this.getIdKey(model, options);
 
     debug('find: ' + key);
     this.redis.get(key, function(err, data) {
@@ -81,11 +94,11 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
 
   create: function(model, options, callback) {
     var self = this;
-    var key = this._getKey(model, options);
+    var key = this.getIdKey(model, options);
     debug('create: ' + key);
     if (model.isNew()) {
       self.createId(model, options, function(err, id) {
-        if(err || !id) {
+        if (err || !id) {
           return callback(err || new Error('id is missing'));
         }
         model.set(model.idAttribute, id);
@@ -97,25 +110,25 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   },
 
   createId: function(model, options, callback) {
-    if(model.createId) return model.createId(callback);
-    var key = this._getKey(model, options);
+    if (model.createId) return model.createId(callback);
+    var key = this.getIdKey(model, options);
     key += ':ids';
     this.redis.incr(key, callback);
   },
 
   update: function(model, options, callback) {
-    var key = this._getKey(model, options);
+    var key = this.getIdKey(model, options);
     var self = this;
-    debug('update: '+key);
-    if(model.isNew()) {
+    debug('update: ' + key);
+    if (model.isNew()) {
       return this.create(model, options, callback);
     }
 
     this.redis.set(key, JSON.stringify(model), function(err, res) {
-      if(model.collection) {
-        var setKey = self._getKey(model.collection, {});
+      if (model.collection) {
+        var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
-        debug('adding model '+modelKey+" to "+setKey);
+        debug('adding model ' + modelKey + " to " + setKey);
         self.redis.sadd(setKey, modelKey, function(err, res) {
           self._updateIndexes(model, options, callback);
         });
@@ -130,7 +143,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     // which is required for clearing indexes
     options.wait = true;
     var self = this;
-    var key = this._getKey(model, options);
+    var key = this.getIdKey(model, options);
     debug("DESTROY: " + key);
     if (model.isNew()) {
       return false;
@@ -143,13 +156,15 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       });
     }
 
-    this._updateIndexes(model, _.extend({operation: 'delete'}, options), function(err) {
-      if(model.collection) {
-        var setKey = self._getKey(model.collection, {});
+    this._updateIndexes(model, _.extend({
+      operation: 'delete'
+    }, options), function(err) {
+      if (model.collection) {
+        var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
         debug('removing model ' + modelKey + " from " + setKey);
         self.redis.srem(setKey, modelKey, function(err, res) {
-          if(err) return callback(err);
+          if (err) return callback(err);
           delKey();
         });
       } else {
@@ -163,7 +178,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     var setKey = collection.indexKey;
     var key = model.id;
     debug('adding model ' + key + ' to ' + setKey);
-    if(collection.indexSort) {
+    if (collection.indexSort) {
       this.redis.zadd(setKey, collection.indexSort(model), key, cb);
     } else {
       this.redis.sadd(setKey, key, function(err, res) {
@@ -179,12 +194,14 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       var models = [];
       var i = 0;
       while (i < data.length) {
-        var modelData = {id: data[i]};
-        i ++;
-        if(options.score && options.score.conversion) {
+        var modelData = {
+          id: data[i]
+        };
+        i++;
+        if (options.score && options.score.conversion) {
           var score = options.score.conversion.fn(data[i]);
           modelData[options.score.conversion.attribute] = score;
-          i ++;
+          i++;
         }
         models.push(modelData);
       }
@@ -193,15 +210,15 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     };
 
     var getReadFn = function() {
-      if(collection.indexSort) {
+      if (collection.indexSort) {
         var min = '-inf';
         var max = '+inf';
-        if(options.score) {
+        if (options.score) {
           min = options.score.min || min;
           max = options.score.max || max;
           var params = [setKey, max, min];
-          if(options.score.conversion) params.push('WITHSCORES');
-          if(options.limit || options.offset) {
+          if (options.score.conversion) params.push('WITHSCORES');
+          if (options.limit || options.offset) {
             params = params.concat(['LIMIT', options.offset || 0, options.limit || -1]);
           }
           return _.bind.apply(null, [self.redis.zrevrangebyscore, self.redis].concat(params));
@@ -224,7 +241,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     var self = this;
     var unionKey = options.unionKey;
     var params = _.clone(options.indexKeys);
-    if(collection.indexSort) params.unshift(options.indexKeys.length); // how many keys to union
+    if (collection.indexSort) params.unshift(options.indexKeys.length); // how many keys to union
     params.unshift(unionKey); // where to store
 
     var unionFn = collection.indexSort ?
@@ -241,8 +258,8 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     var setKey = collection.indexKey;
     var keys = _.pluck(models, models[0].idAttribute);
     var cmd = [setKey].concat(keys);
-    debug('removing key: ' + keys +' from: ' + setKey);
-    if(collection.indexSort) {
+    debug('removing key: ' + keys + ' from: ' + setKey);
+    if (collection.indexSort) {
       this.redis.zrem(cmd, cb);
     } else {
       this.redis.srem(cmd, cb);
@@ -264,7 +281,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       cb(err, rank !== null);
     }
 
-    if(collection.indexSort) {
+    if (collection.indexSort) {
       this.redis.zrank(setKey, key, done);
     } else {
       this.redis.sismember(setKey, key, function(err, isMember) {
@@ -276,7 +293,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   indexCount: function(collection, options, cb) {
     var setKey = collection.indexKey;
     debug('get count for: ' + setKey);
-    if(collection.indexSort) {
+    if (collection.indexSort) {
       this.redis.zcard(setKey, cb);
     } else {
       this.redis.scard(setKey, cb);
@@ -289,7 +306,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   },
 
   _updateIndexes: function(model, options, callback) {
-    if(!model.indexes) {
+    if (!model.indexes) {
       debug('nothing to index');
       return callback(null, model.toJSON());
     }
@@ -300,8 +317,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       data: model.attributes,
       prevData: operation === 'delete' ? model.attributes : model.previousAttributes(),
       operation: operation,
-      // dbBaseKey defines a namespace for Redis keys
-      baseKey: model.dbBaseKey || (model.collection ? model.collection.type : model.type),
+      model: model,
       id: model.id
     };
     indexing.updateIndexes(indexingOpts, callback);
@@ -311,5 +327,3 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
 Backbone.RedisDb.Set = require('./lib/set');
 Backbone.RedisDb.Hash = require('./lib/hash');
 module.exports = Backbone.RedisDb;
-
-
