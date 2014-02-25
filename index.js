@@ -36,6 +36,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   // get key for set where ids are stored
   getIdKey: function(model, options) {
     var key = '';
+    options = options || {};
     if (options.url) {
       key = typeof options.url === "function" ? options.url() : options.url;
     } else if (model.url) {
@@ -69,6 +70,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       var dbOpts = {
         db: this,
         model: model,
+        ModelClass: model.model,
         modelKey: modelKey,
         collectionKey: collectionKey,
         indexes: m.indexes
