@@ -62,12 +62,15 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   findAll: function(model, options, callback) {
     options = options || {};
     var collectionKey = this.getIdKey(model, options);
+    var modelKey;
+    var dbOpts;
+
     debug('findAll ' + collectionKey);
     // if Collection
     if (model.model) {
       var m = new model.model();
-      var modelKey = this.getIdKey(m, {});
-      var dbOpts = {
+      modelKey = this.getIdKey(m, {});
+      dbOpts = {
         db: this,
         model: model,
         ModelClass: model.model,
@@ -77,9 +80,33 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       };
       query.queryModels(options, dbOpts, callback);
     } else {
-      this.redis.get(collectionKey, function(err, data) {
-        data = data && JSON.parse(data);
-        callback(err, data);
+      // fetch a model with given attributes
+      // check that initial attributes are indexed
+      var indexedKeys = _.pluck(model.indexes, 'property');
+      var objectKeys = Object.keys(model.attributes);
+      var searchAttrs = {};
+      var allIndexed = _.each(objectKeys, function(attr) {
+        if(indexedKeys.indexOf(attr) > -1) {
+          searchAttrs[attr] = model.get(attr);
+        }
+      });
+      if (!Object.keys(searchAttrs).length) {
+        var err = new Error('Cannot fetch model with given attributes');
+        return callback(err);
+      }
+      options.where = searchAttrs;
+      debug('fetch model', collectionKey, options.where);
+      modelKey = this.getIdKey(model, {});
+      dbOpts = {
+        db: this,
+        model: model,
+        ModelClass: model.constructor,
+        modelKey: modelKey,
+        collectionKey: collectionKey,
+        indexes: model.indexes
+      };
+      query.queryModels(options, dbOpts, function(err, results) {
+        callback(err, results && results.length && results[0]);
       });
     }
   },

@@ -39,12 +39,34 @@ describe('Indexing tests', function() {
     });
   });
 
+  it('should fetch model with non-id attributes', function(done) {
+    var model = new IndexedModel({value: 1});
+    model
+      .fetch()
+      .then(function() {
+        assert.equal(model.id, 1);
+        assert.equal(model.get('value'), 1);
+        done();
+      }, done);
+  });
+
+  it('should result an error if trying to fetch model with non-indexed attributes', function(done) {
+    var model = new IndexedModel({foo: 'bar'});
+    model
+      .fetch()
+      .then(function() {
+        done(new Error('model should not be fetched'));
+      }, function(err) {
+        done();
+      });
+  });
+
   it('should fetch all models', function(done) {
     collection
       .fetch()
       .then(function() {
         done();
-      });
+      }, done);
   });
 
   it('should remove indexes when removing models', function(done) {
