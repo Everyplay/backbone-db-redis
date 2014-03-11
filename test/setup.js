@@ -9,7 +9,7 @@ var redis = require('redis');
 
 var MyModel = exports.MyModel = Model.extend({
   db: store,
-  sync: RedisDb.sync,
+  sync: store.sync,
   type: 'mymodel',
   dbBaseKey: 'mymodels',
   url: function() {
@@ -23,7 +23,7 @@ var MyModel = exports.MyModel = Model.extend({
 
 var MyCollection = exports.MyCollection = Collection.extend({
   db: store,
-  sync: RedisDb.sync,
+  sync: store.sync,
   model: MyModel,
   type: 'mymodels',
   url: function() {

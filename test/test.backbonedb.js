@@ -1,5 +1,4 @@
-/*
-var assert = require('assert');
+/*var assert = require('assert');
 var setup = require('./setup');
 var MyModel = setup.MyModel;
 var MyCollection = setup.MyCollection;
@@ -21,4 +20,5 @@ describe('backbone-db', function () {
     setup.clearDb(next);
   });
 });
+
 */

@@ -7,7 +7,7 @@ var _ = require('lodash'),
   query = require('./lib/query');
 
 
-Backbone.RedisDb = function(name, client) {
+var RedisDb = Backbone.RedisDb = function(name, client) {
   this.name = name ||  '';
   this.redis = client;
   if (!this.redis) {
@@ -23,16 +23,73 @@ Backbone.RedisDb.prototype.key = function(key) {
   }
 };
 
-Backbone.RedisDb.sync = Db.sync;
+var loadFnMap = {
+  'string': 'get',
+  'hash': 'hgetall'
+};
 
-_.extend(Backbone.RedisDb.prototype, Db.prototype, {
+var saveFnMap = {
+  'string': 'set',
+  'hash': 'hmset'
+};
+
+_.extend(RedisDb.prototype, Db.prototype, {
   createClient: function() {
-    var self = this;
     if (this.redis) {
       return redis.createClient(this.redis.port, this.redis.host);
     }
   },
-
+  _getLoadFn: function(model, options) {
+    var type = model.redis_type || 'string';
+    return loadFnMap[type.toLowerCase()] || 'get';
+  },
+  _getSaveFn: function(model, options) {
+    var type = model.redis_type || 'string';
+    return saveFnMap[type.toLowerCase()] || 'set';
+  },
+  _getSaveArgs: function(model, options, fn) {
+    var args = [this.getIdKey(model, options)];
+    options = options || {};
+    var limit = options.limit || -1;
+    var offset = options.offset || 0;
+    if (fn === 'hmset') {
+      var data = model.toJSON();
+      var out = {};
+      Object.keys(data).forEach(function(attr) {
+        out[attr] = JSON.stringify(data[attr]);
+      });
+      console.log(out);
+      args.push(out);
+    } else if (fn === 'set') {
+      args.push(JSON.stringify(model));
+    }
+    return args;
+  },
+  _getLoadArgs: function(model, options, fn) {
+    var args = [this.getIdKey(model, options)];
+    options = options || {};
+    var limit = options.limit || -1;
+    var offset = options.offset || 0;
+    if (fn === 'zrange' || fn === 'lrange') {
+      args.push(offset);
+      args.push(limit);
+    }
+    return args;
+  },
+  getFetchCommand: function(model, options) {
+    var fn = this._getLoadFn(model);
+    var res = {};
+    res.args = this._getLoadArgs(model, options, fn);
+    res.fn = fn;
+    return res;
+  },
+  getSaveCommand: function(model, options) {
+    var fn = this._getSaveFn(model);
+    var res = {};
+    res.args = this._getSaveArgs(model, options, fn);
+    res.fn = fn;
+    return res;
+  },
   // get key for set where ids are stored
   getIdKey: function(model, options) {
     var key = '';
@@ -86,7 +143,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       var objectKeys = Object.keys(model.attributes);
       var searchAttrs = {};
       var allIndexed = _.each(objectKeys, function(attr) {
-        if(indexedKeys.indexOf(attr) > -1) {
+        if (indexedKeys.indexOf(attr) > -1) {
           searchAttrs[attr] = model.get(attr);
         }
       });
@@ -114,10 +171,18 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   find: function(model, options, callback) {
     var key = this.getIdKey(model, options);
     debug('find: ' + key);
-    this.redis.get(key, function(err, data) {
-      data = data && JSON.parse(data);
+    var cmd = this.getFetchCommand(model, options);
+    cmd.args.push(function(err, data) {
+      if (typeof data === 'string') {
+        data = data && JSON.parse(data);
+      } else if (data) {
+        _.each(data, function(v, k) {
+          data[k] = JSON.parse(v);
+        });
+      }
       callback(err, data);
     });
+    this.redis[cmd.fn].apply(this.redis, cmd.args);
   },
 
   create: function(model, options, callback) {
@@ -151,8 +216,8 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     if (model.isNew()) {
       return this.create(model, options, callback);
     }
-
-    this.redis.set(key, JSON.stringify(model), function(err, res) {
+    var cmd = this.getSaveCommand(model, options);
+    cmd.args.push(function(err, res) {
       if (model.collection) {
         var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
@@ -164,6 +229,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
         self._updateIndexes(model, options, callback);
       }
     });
+    this.redis[cmd.fn].apply(this.redis, cmd.args);
   },
 
   destroy: function(model, options, callback) {
@@ -356,6 +422,5 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
   }
 });
 
-Backbone.RedisDb.Set = require('./lib/set');
-Backbone.RedisDb.Hash = require('./lib/hash');
-module.exports = Backbone.RedisDb;
+console.log(RedisDb.prototype.sync);
+module.exports = RedisDb;
