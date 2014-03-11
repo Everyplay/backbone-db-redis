@@ -10,8 +10,8 @@
   "author": "Nomon",
   "license": "MIT",
   "dependencies": {
+    "lodash": "~2.4.1",
     "backbone": "~1.1.0",
-    "underscore": "~1.4.4",
     "redis": "~0.8.4",
     "debug": "~0.7.2",
     "backbone-db": "~0.4",

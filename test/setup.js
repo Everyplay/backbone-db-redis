@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var RedisDb = require('../');
 var Backbone = require('backbone');
 var Promises = require('backbone-promises');

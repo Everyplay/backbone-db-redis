@@ -1,5 +1,5 @@
 var assert = require('assert');
-var _ = require('underscore');
+var _ = require('lodash');
 var nodefn = require('when/node/function');
 var Promises = require('backbone-promises');
 var when = Promises.when;
