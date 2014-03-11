@@ -14,7 +14,7 @@ var MyModel = exports.MyModel = Model.extend({
   dbBaseKey: 'mymodels',
   url: function() {
     var key = this.dbBaseKey || this.type;
-    if(!this.isNew()) {
+    if (!this.isNew()) {
       key += ':' + this.get(this.idAttribute);
     }
     return key;

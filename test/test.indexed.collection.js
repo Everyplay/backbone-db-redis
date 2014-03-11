@@ -1,5 +1,5 @@
 var assert = require('assert');
-var _ = require('lodash');
+var _ = require('lodash' );
 var nodefn = require('when/node/function');
 var Promises = require('backbone-promises');
 var when = Promises.when;
@@ -84,12 +84,12 @@ var TestCollection = MyCollection.extend({
 
   _callAdapter: function(fn, options, models) {
     options = options ? _.clone(options) : {};
-    if(!this.indexDb) {
+    if (!this.indexDb) {
       throw new Error('indexDb must be defined');
     }
     options.indexKey = this.indexKey;
     var args = [this, options];
-    if(models) args.splice(1, 0, models);
+    if (models) args.splice(1, 0, models);
     return nodefn.apply(_.bind(this.indexDb[fn], this.indexDb), args);
   }
 });

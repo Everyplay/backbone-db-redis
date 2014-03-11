@@ -8,7 +8,7 @@ var _ = require('lodash'),
 
 
 Backbone.RedisDb = function(name, client) {
-  this.name = name || "";
+  this.name = name ||  '';
   this.redis = client;
   if (!this.redis) {
     this.redis = redis.createClient();
@@ -16,7 +16,7 @@ Backbone.RedisDb = function(name, client) {
 };
 
 Backbone.RedisDb.prototype.key = function(key) {
-  if (this.name === "") {
+  if (this.name === '') {
     return key;
   } else {
     return this.name + ':' + key;
@@ -38,9 +38,9 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
     var key = '';
     options = options || {};
     if (options.url) {
-      key = typeof options.url === "function" ? options.url() : options.url;
+      key = typeof options.url === 'function' ? options.url() : options.url;
     } else if (model.url) {
-      key = typeof model.url === "function" ? model.url() : model.url;
+      key = typeof model.url === 'function' ? model.url() : model.url;
     } else if (model.id) {
       key = model.id;
     }
@@ -156,7 +156,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       if (model.collection) {
         var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
-        debug('adding model ' + modelKey + " to " + setKey);
+        debug('adding model ' + modelKey + ' to ' + setKey);
         self.redis.sadd(setKey, modelKey, function(err, res) {
           self._updateIndexes(model, options, callback);
         });
@@ -190,7 +190,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
       if (model.collection) {
         var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
-        debug('removing model ' + modelKey + " from " + setKey);
+        debug('removing model ' + modelKey + ' from ' + setKey);
         self.redis.srem(setKey, modelKey, function(err, res) {
           if (err) return callback(err);
           delKey();
@@ -330,7 +330,7 @@ _.extend(Backbone.RedisDb.prototype, Db.prototype, {
 
   findKeys: function(collection, options, cb) {
     var prefix = options.prefix || (this.getIdKey(collection, {}));
-    if(prefix.indexOf(':', prefix.length - 1) === -1
+    if (prefix.indexOf(':', prefix.length - 1) === -1
       && options.keys.length) {
       prefix += ':';
     }
