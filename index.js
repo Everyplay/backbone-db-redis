@@ -421,6 +421,5 @@ _.extend(RedisDb.prototype, Db.prototype, {
     indexing.updateIndexes(indexingOpts, callback);
   }
 });
-
-console.log(RedisDb.prototype.sync);
+RedisDb.Hash = require('./lib/hash');
 module.exports = RedisDb;
