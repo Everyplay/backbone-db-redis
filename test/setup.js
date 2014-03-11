@@ -33,7 +33,7 @@ var MyCollection = exports.MyCollection = Collection.extend({
 
 var IndexedModel = exports.IndexedModel = MyModel.extend({
   indexes: [
-    {property: 'value', sort: 'asc'},
+    {property: 'value', sort: 'asc', unique: true},
     {property: 'name'},
     {property: 'platforms'}
   ]

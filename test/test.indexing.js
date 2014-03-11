@@ -50,8 +50,8 @@ describe('Indexing tests', function() {
       }, done);
   });
 
-  it('should result an error if trying to fetch model with non-indexed attributes', function(done) {
-    var model = new IndexedModel({foo: 'bar'});
+  it('should result an error if trying to fetch model with non-unique attributes', function(done) {
+    var model = new IndexedModel({name: 'a'});
     model
       .fetch()
       .then(function() {

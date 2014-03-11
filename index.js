@@ -130,7 +130,10 @@ _.extend(RedisDb.prototype, Db.prototype, {
     } else {
       // fetch a model with given attributes
       // check that initial attributes are indexed
-      var indexedKeys = _.pluck(model.indexes, 'property');
+      var indexedKeys = _.chain(model.indexes)
+        .where({unique: true})
+        .pluck('property')
+        .value();
       var objectKeys = Object.keys(model.attributes);
       var searchAttrs = {};
       var allIndexed = _.each(objectKeys, function(attr) {
