@@ -50,30 +50,21 @@ _.extend(RedisDb.prototype, Db.prototype, {
   _getSaveArgs: function(model, options, fn) {
     var args = [this.getIdKey(model, options)];
     options = options || {};
-    var limit = options.limit || -1;
-    var offset = options.offset || 0;
     if (fn === 'hmset') {
       var data = model.toJSON();
       var out = {};
       Object.keys(data).forEach(function(attr) {
         out[attr] = JSON.stringify(data[attr]);
       });
-      console.log(out);
       args.push(out);
     } else if (fn === 'set') {
       args.push(JSON.stringify(model));
     }
     return args;
   },
-  _getLoadArgs: function(model, options, fn) {
+  _getLoadArgs: function(model, options) {
     var args = [this.getIdKey(model, options)];
     options = options || {};
-    var limit = options.limit || -1;
-    var offset = options.offset || 0;
-    if (fn === 'zrange' || fn === 'lrange') {
-      args.push(offset);
-      args.push(limit);
-    }
     return args;
   },
   getFetchCommand: function(model, options) {
