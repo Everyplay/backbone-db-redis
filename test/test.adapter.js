@@ -80,7 +80,9 @@ describe('RedisDB redis adapter', function() {
       a: 124,
       b: Math.random(),
       c: 'abc',
-      d: false
+      d: false,
+      e: new Date(),
+      f: ['aa']
     };
     var data2 = {
       a: 125,
@@ -106,6 +108,9 @@ describe('RedisDB redis adapter', function() {
       .fetch({where: {c: 'abc'}})
       .then(function() {
         coll.length.should.equal(2);
+        var model = coll.at(0);
+        model.get('c').should.equal('abc');
+        model.get('f').should.contain('aa');
       });
   });
 
