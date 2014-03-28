@@ -124,7 +124,8 @@ _.extend(RedisDb.prototype, Db.prototype, {
         ModelClass: model.model,
         modelKey: modelKey,
         collectionKey: collectionKey,
-        indexes: m.indexes
+        indexes: m.indexes,
+        redis_type: m.redis_type
       };
       query.queryModels(options, dbOpts, callback);
     } else {
