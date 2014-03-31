@@ -104,7 +104,6 @@ _.extend(RedisDb.prototype, Db.prototype, {
   getValueSetKey: function(model, key, val) {
     var baseKey = model.dbBaseKey || model.type;
     var setKey = 'i:' + baseKey + ':' + key + ':' + val;
-    console.log('getValueSetKey', setKey, this.name);
     if (this.name !== '') {
       return this.name + ':' + setKey;
     } else {
