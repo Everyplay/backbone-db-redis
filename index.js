@@ -92,19 +92,35 @@ _.extend(RedisDb.prototype, Db.prototype, {
     } else if (model.id) {
       key = model.id;
     }
-    return this.name + (key ? ':' + key : '');
+    if (this.name !== '') {
+      return this.name + (key ? ':' + key : '');
+    } else {
+      return key;
+    }
+
   },
 
   // get Redis key for set, where key/value is stored
   getValueSetKey: function(model, key, val) {
     var baseKey = model.dbBaseKey || model.type;
-    return this.name + ':i:' + baseKey + ':' + key + ':' + val;
+    var setKey = 'i:' + baseKey + ':' + key + ':' + val;
+    console.log('getValueSetKey', setKey, this.name);
+    if (this.name !== '') {
+      return this.name + ':' + setKey;
+    } else {
+      return setKey;
+    }
   },
 
   // get Redis key for set for sorted property
   getSortSetKey: function(model, sortProp) {
     var baseKey = model.dbBaseKey || model.type;
-    return this.name + ':i:' + baseKey + ':' + sortProp;
+    var setKey = 'i:' + baseKey + ':' + sortProp;
+    if (this.name !== '') {
+      return this.name + ':' + setKey;
+    } else {
+      return setKey;
+    }
   },
 
   findAll: function(model, options, callback) {
