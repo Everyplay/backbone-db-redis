@@ -188,7 +188,11 @@ _.extend(RedisDb.prototype, Db.prototype, {
         data = data && JSON.parse(data);
       } else if (data) {
         _.each(data, function(v, k) {
-          data[k] = JSON.parse(v);
+          try {
+            data[k] = JSON.parse(v);
+          } catch (e) {
+            data[k] = v;
+          }
         });
       }
       callback(err, data);
