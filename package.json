@@ -1,6 +1,6 @@
 {
   "name": "backbone-db-redis",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "description": "Redis driver for Backbone.Db",
   "main": "index.js",
   "scripts": {
