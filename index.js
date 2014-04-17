@@ -314,7 +314,11 @@ _.extend(RedisDb.prototype, Db.prototype, {
         }
         models.push(modelData);
       }
-      collection.set(models, options);
+      var setOpts = {};
+      // disable sort by default here, since it's expected that redis set was sorted
+      if (collection.indexSort) setOpts.sort = false;
+      var opts = _.extend(setOpts, options);
+      collection.set(models, opts);
       return cb(err, models);
     };
 
