@@ -33,12 +33,17 @@ var saveFnMap = {
   'hash': 'hmset'
 };
 
+var incFnMap = {
+  'hash': 'hincrby'
+};
+
 _.extend(RedisDb.prototype, Db.prototype, {
   createClient: function() {
     if (this.redis) {
       return redis.createClient(this.redis.port, this.redis.host);
     }
   },
+
   _getLoadFn: function(model, options) {
     var type = model.redis_type || 'string';
     return loadFnMap[type.toLowerCase()] || 'get';
@@ -46,6 +51,13 @@ _.extend(RedisDb.prototype, Db.prototype, {
   _getSaveFn: function(model, options) {
     var type = model.redis_type || 'string';
     return saveFnMap[type.toLowerCase()] || 'set';
+  },
+  _getIncFn: function(model, options) {
+    var type = model.redis_type || 'string';
+    if (!incFnMap.hasOwnProperty(type)) {
+      throw new Error('Cannot inc with type: ' + type);
+    }
+    return incFnMap[type.toLowerCase()];
   },
   _getSaveArgs: function(model, options, fn) {
     var args = [this.getIdKey(model, options)];
@@ -81,6 +93,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
     res.fn = fn;
     return res;
   },
+
   // get key for set where ids are stored
   getIdKey: function(model, options) {
     var key = '';
@@ -97,7 +110,6 @@ _.extend(RedisDb.prototype, Db.prototype, {
     } else {
       return key;
     }
-
   },
 
   // get Redis key for set, where key/value is stored
@@ -225,6 +237,9 @@ _.extend(RedisDb.prototype, Db.prototype, {
   },
 
   update: function(model, options, callback) {
+    if (options.inc) {
+      return this.inc(model, options, callback);
+    }
     var key = this.getIdKey(model, options);
     var self = this;
     debug('update: ' + key);
@@ -245,6 +260,15 @@ _.extend(RedisDb.prototype, Db.prototype, {
       }
     });
     this.redis[cmd.fn].apply(this.redis, cmd.args);
+  },
+
+  inc: function (model, options, callback) {
+    var key = this.getIdKey(model, options);
+    debug('inc: ' + key);
+    var incFn = this._getIncFn(model, options);
+    var attribute = options.inc.attribute;
+    var amount = options.inc.amount || 1;
+    this.redis[incFn](key, attribute, amount, callback);
   },
 
   destroy: function(model, options, callback) {

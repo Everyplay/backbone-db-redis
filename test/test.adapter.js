@@ -121,4 +121,25 @@ describe('RedisDB redis adapter', function() {
         coll.length.should.equal(1);
       });
   });
+
+  it('should inc Hash model property', function() {
+    var coll = new HashCollection();
+    return coll
+      .fetch({where: {d: true}})
+      .then(function() {
+        var h = coll.at(0);
+        h.get('a').should.equal(125);
+        var saveOpts = {
+          inc: {
+            attribute: 'a',
+            amount: 1
+          }
+        };
+        return h.save(null, saveOpts).then(function() {
+          return h.fetch();
+        }).then(function(){
+          h.get('a').should.equal(126);
+        });
+      });
+  });
 });
