@@ -378,8 +378,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
     var self = this;
     var unionKey = options.unionKey;
     var params = _.clone(options.indexKeys);
-    params.push(collection.indexKey);
-    if (collection.indexSort) params.unshift(params.length); // how many keys to union
+    if (collection.indexSort) params.unshift(options.indexKeys.length); // how many keys to union
     params.unshift(unionKey); // where to store
 
     var unionFn = collection.indexSort ?
