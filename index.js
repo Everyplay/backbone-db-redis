@@ -378,9 +378,12 @@ _.extend(RedisDb.prototype, Db.prototype, {
     var self = this;
     var unionKey = options.unionKey;
     var params = _.clone(options.indexKeys);
-    if (collection.indexSort) params.unshift(options.indexKeys.length); // how many keys to union
+    if (collection.indexSort) params.unshift(options.indexKeys.length); // how many sets to union
     params.unshift(unionKey); // where to store
-
+    if (options.weights) {
+      params.push('WEIGHTS');
+      params.push.apply(params, options.weights);
+    }
     var unionFn = collection.indexSort ?
       _.bind(this.redis.zunionstore, this.redis) :
       _.bind(this.redis.sunionstore, this.redis);
