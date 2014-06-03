@@ -360,7 +360,9 @@ _.extend(RedisDb.prototype, Db.prototype, {
           }
           return _.bind.apply(null, [self.redis.zrevrangebyscore, self.redis].concat(params));
         } else {
-          return _.bind(self.redis.zrevrange, self.redis, setKey, options.offset || 0, options.limit || -1);
+          var start = options.offset || 0;
+          var stop = options.limit ? (start + options.limit - 1) : -1;
+          return _.bind(self.redis.zrevrange, self.redis, setKey, start, stop);
         }
       }
       return _.bind(self.redis.smembers, self.redis, setKey);

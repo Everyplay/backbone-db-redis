@@ -209,6 +209,28 @@ describe('Test IndexedCollection', function () {
       }).otherwise(done);
   });
 
+  it('should read with limit', function() {
+    collection = new TestCollection();
+    return collection
+      .readFromIndex({limit: 1, offset: 0})
+      .then(function() {
+        collection.length.should.equal(1);
+        collection.at(0).id.should.equal('3');
+      });
+  });
+
+  it('should read with offset', function() {
+    collection = new TestCollection();
+    return collection
+      .readFromIndex({limit: 2, offset: 1})
+      .then(function() {
+        collection.length.should.equal(2);
+        collection.at(0).id.should.equal('1');
+        collection.at(1).id.should.equal('2');
+      });
+  });
+
+
   it('should add item to another index', function(done) {
     collection2 = new  TestCollection2();
     collection2
