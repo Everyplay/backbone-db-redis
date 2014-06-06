@@ -1,4 +1,5 @@
 require('chai').should();
+var when = require('when');
 var DB = require('../');
 var Promises = require('backbone-promises');
 var Collection = Promises.Collection;
@@ -7,6 +8,7 @@ var Hash = require('../lib/hash');
 var SortedSet = require('../lib/sortedset');
 var List = require('../lib/list');
 var SetModel = require('../lib/set');
+var setup = require('./setup');
 
 var HashModel = Hash.extend({
   type: 'hashmodel',
@@ -30,12 +32,18 @@ var HashCollection = Collection.extend({
   url: function() {
     return this.type;
   }
+});
 
+var HashIndexCollection = setup.TestIndexedCollection.extend({
+  model: HashModel,
+  indexKey: 'test:i:hashindex',
+  indexSort: null
 });
 
 describe('RedisDB redis adapter', function() {
   var db;
   var collection;
+  var index;
 
   before(function() {
     db = new DB('tests');
@@ -43,12 +51,18 @@ describe('RedisDB redis adapter', function() {
     HashModel.prototype.db = db;
     HashCollection.prototype.sync = db.sync;
     HashCollection.prototype.db = db;
+    HashIndexCollection.prototype.sync = db.sync;
+    HashIndexCollection.prototype.db = db;
+    HashIndexCollection.prototype.indexDb = db;
+    index = new HashIndexCollection();
   });
 
   after(function() {
     var fns = [
       collection.at(0).destroy(),
       collection.at(1).destroy(),
+      collection.at(2).destroy(),
+      index.destroyAll()
     ];
     return Promises.when.all(fns);
   });
@@ -81,23 +95,34 @@ describe('RedisDB redis adapter', function() {
       c: 'abc',
       d: false,
       e: new Date(),
-      f: ['aa']
+      f: ['aa'],
+      g: 'ddd'
     };
     var data2 = {
-      a: 125,
+      a: 225,
       b: Math.random(),
       c: 'abc',
-      d: true
+      d: true,
+      g: 'aaa'
     };
+    var data3 = {
+      a: 125,
+      b: Math.random(),
+      c: 'gde',
+      d: false,
+      g: 'aaa'
+    };
+
     collection = new HashCollection();
     var fns = [
       collection.create(data),
       collection.create(data2),
+      collection.create(data3)
     ];
     return Promises.when
       .all(fns)
       .then(function() {
-        collection.length.should.equal(2);
+        collection.length.should.equal(3);
       });
   });
 
@@ -128,7 +153,7 @@ describe('RedisDB redis adapter', function() {
       .fetch({where: {d: true}})
       .then(function() {
         var h = coll.at(0);
-        h.get('a').should.equal(125);
+        h.get('a').should.equal(225);
         var saveOpts = {
           inc: {
             attribute: 'a',
@@ -138,8 +163,40 @@ describe('RedisDB redis adapter', function() {
         return h.save(null, saveOpts).then(function() {
           return h.fetch();
         }).then(function(){
-          h.get('a').should.equal(126);
+          h.get('a').should.equal(226);
         });
       });
   });
+
+  it('should add models to index', function() {
+    var coll = new HashCollection();
+    return coll
+      .fetch()
+      .then(function() {
+        return when.all([
+          index.addToIndex(coll.at(0)),
+          index.addToIndex(coll.at(1)),
+          index.addToIndex(coll.at(2))
+        ]);
+      });
+  });
+
+  it('should read from index sorted by `a`', function() {
+    return index
+      .readFromIndex({sort: 'a'})
+      .then(function() {
+        index.length.should.equal(3);
+        index.at(0).get('a').should.equal(124);
+      });
+  });
+
+  it('should read from index sorted by `-a`', function() {
+    return index
+      .readFromIndex({sort: '-a'})
+      .then(function() {
+        index.length.should.equal(3);
+        index.at(0).get('a').should.equal(226);
+      });
+  });
+
 });

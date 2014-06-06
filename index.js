@@ -4,7 +4,8 @@ var _ = require('lodash'),
   redis = require('redis'),
   debug = require('debug')('backbone-db-redis'),
   indexing = require('./lib/indexing'),
-  query = require('./lib/query');
+  query = require('./lib/query'),
+  utils = require('./lib/utils');
 
 
 var RedisDb = Backbone.RedisDb = function(name, client) {
@@ -347,13 +348,14 @@ _.extend(RedisDb.prototype, Db.prototype, {
     };
 
     var getReadFn = function() {
+      var params;
       if (collection.indexSort) {
         var min = '-inf';
         var max = '+inf';
         if (options.score) {
           min = options.score.min || min;
           max = options.score.max || max;
-          var params = [setKey, max, min];
+          params = [setKey, max, min];
           if (options.score.conversion) params.push('WITHSCORES');
           if (options.limit || options.offset) {
             params = params.concat(['LIMIT', options.offset || 0, options.limit || -1]);
@@ -365,6 +367,19 @@ _.extend(RedisDb.prototype, Db.prototype, {
           return _.bind(self.redis.zrevrange, self.redis, setKey, start, stop);
         }
       }
+      if (options.sort && collection.model.prototype.redis_type === 'hash') {
+        var m = new collection.model();
+        var idKey = self.getIdKey(m);
+        var parsedSort = utils.parseSort(options.sort);
+        var sortParams = idKey + ':*->' + parsedSort.sortProp;
+        params = [setKey, 'BY', sortParams];
+        if (parsedSort.sortOrder === -1) {
+          params.push('DESC');
+        }
+        debug('dynamic sort:', params);
+        return _.bind.apply(null, [self.redis.sort, self.redis].concat(params));
+      }
+
       return _.bind(self.redis.smembers, self.redis, setKey);
     };
 
