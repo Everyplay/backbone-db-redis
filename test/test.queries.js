@@ -1,7 +1,8 @@
 var assert = require('assert');
 var _ = require('lodash');
 var Promises = require('backbone-promises');
-
+var util = require('util');
+var when = require('when');
 var setup = require('./setup');
 var redis = setup.store.redis;
 
@@ -234,5 +235,32 @@ describe('Query tests', function() {
       }).otherwise(done);
   });
 
+  it('should insert custom values for sorting', function() {
+    var fns = [];
+    return collection.fetch().then(function() {
+      collection.each(function(model) {
+        var key = util.format('test:custom:%s:sortvalue', model.id);
+        var val = 5 - model.id;
+        fns.push(redis.set(key, val));
+      });
+      return when.all(fns);
+    });
+  });
 
+  it('should fetch using customSort', function() {
+    var opts = {
+      where: {
+        platforms: {
+          $in: 'android'
+        }
+      },
+      sort: '-value',
+      customSort: {
+        value: 'custom:*:sortvalue'
+      }
+    };
+    return collection.fetch(opts).then(function() {
+      collection.at(0).id.should.equal(1);
+    });
+  });
 });
