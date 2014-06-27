@@ -173,7 +173,7 @@ exports.insertFixtureData = function (collection, cb) {
 
 exports.clearDb = function(cb) {
   var client = redis.createClient();
-  client.keys('test:*', function(err, keys) {
+  client.keys('test*', function(err, keys) {
     keys.forEach(function(key) {
       client.del(key);
     });

@@ -9,6 +9,9 @@ var SortedSet = require('../lib/sortedset');
 var List = require('../lib/list');
 var SetModel = require('../lib/set');
 var setup = require('./setup');
+var redis = setup.store.redis;
+var async = require('async');
+var _ = require('lodash');
 
 var HashModel = Hash.extend({
   type: 'hashmodel',
@@ -40,6 +43,13 @@ var HashIndexCollection = setup.TestIndexedCollection.extend({
   indexSort: null
 });
 
+var CustomIndexedHashCollection = HashCollection.extend({
+  customIndex: 'i:custom',
+  url: function() {
+    return this.customIndex;
+  }
+});
+
 describe('RedisDB redis adapter', function() {
   var db;
   var collection;
@@ -57,14 +67,16 @@ describe('RedisDB redis adapter', function() {
     index = new HashIndexCollection();
   });
 
-  after(function() {
+  after(function(next) {
     var fns = [
       collection.at(0).destroy(),
       collection.at(1).destroy(),
       collection.at(2).destroy(),
-      index.destroyAll()
+      index.destroyAll(),
     ];
-    return Promises.when.all(fns);
+    return Promises.when.all(fns).then(function() {
+      setup.clearDb(next);
+    });
   });
 
   it('should determine load and save function from models redis_type', function() {
@@ -199,4 +211,64 @@ describe('RedisDB redis adapter', function() {
       });
   });
 
+  it('should add models to customIndex', function(next) {
+    var coll = new HashCollection();
+    coll
+      .fetch()
+      .then(function() {
+        var fns = [];
+        collection.each(function(model) {
+          fns.push(_.bind(redis.sadd, redis, 'tests:i:custom', model.id));
+          fns.push(_.bind(redis.set, redis, 'tests:customsort:' + model.id, 500 - model.get('a')));
+        });
+        async.parallel(fns, function(err, res) {
+          next();
+        });
+      });
+  });
+
+  it('should fetch from customIndex', function() {
+    var coll = new CustomIndexedHashCollection();
+    return coll
+      .fetch()
+      .then(function() {
+        coll.length.should.equal(3);
+      });
+  });
+
+  it('should fetch from customIndex sorting by value set to customsort', function() {
+    var opts = {
+      sort: 'a',
+      customSort: {
+        a: 'customsort:*'
+      }
+    };
+    var coll = new CustomIndexedHashCollection();
+    return coll
+      .fetch(opts)
+      .then(function() {
+        coll.length.should.equal(3);
+        coll.at(0).get('a').should.equal(226);
+      });
+  });
+
+  it('should defer to customIndex with where params', function() {
+    var opts = {
+      where: {
+        g: 'aaa'
+      },
+      sort: '-a',
+      customSort: {
+        a: 'customsort:*'
+      }
+    };
+    var coll = new CustomIndexedHashCollection();
+    opts.customIndex = 'tests:' + coll.url();
+    return coll
+      .fetch(opts)
+      .then(function() {
+        coll.length.should.equal(3);
+        coll.at(0).get('a').should.equal(124);
+    });
+  });
 });
