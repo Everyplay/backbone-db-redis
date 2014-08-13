@@ -68,6 +68,28 @@ describe('Test IndexedCollection', function () {
       }).otherwise(done);
   });
 
+  it('should read from index with min range', function(done) {
+    var opts = {
+      score: {
+        min: '(22',
+        conversion: {
+          fn: function(score) {
+            return score;
+          },
+          attribute: 'score'
+        }
+      }
+    };
+    collection = new TestCollection();
+    collection
+      .readFromIndex(opts)
+      .then(function() {
+        assert.equal(collection.length, 1);
+        assert.equal(collection.at(0).get('score'), '99');
+        done();
+      }).otherwise(done);
+  });
+
   it('should read ids with given score options', function(done) {
     var opts = {
       score: {
@@ -94,6 +116,18 @@ describe('Test IndexedCollection', function () {
       }).otherwise(done);
   });
 
+  it('should read ids from index in reverse', function(done) {
+    collection = new TestCollection();
+    collection
+      .readFromIndex({sortOrder: 1})
+      .then(function() {
+        assert.equal(collection.length, 3);
+        assert.equal(collection.pluck('id').length, 3);
+        collection.at(0).id.should.equal('2');
+        done();
+      }).otherwise(done);
+  });
+
   it('should read ids from index', function(done) {
     collection = new TestCollection();
     collection
@@ -101,6 +135,7 @@ describe('Test IndexedCollection', function () {
       .then(function() {
         assert.equal(collection.length, 3);
         assert.equal(collection.pluck('id').length, 3);
+        collection.at(0).id.should.equal('3');
         done();
       }).otherwise(done);
   });
@@ -143,7 +178,6 @@ describe('Test IndexedCollection', function () {
         collection.at(1).id.should.equal('2');
       });
   });
-
 
   it('should add item to another index', function(done) {
     collection2 = new  TestCollection2();
