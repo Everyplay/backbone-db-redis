@@ -360,10 +360,16 @@ _.extend(RedisDb.prototype, Db.prototype, {
           if (options.limit || options.offset) {
             params = params.concat(['LIMIT', options.offset || 0, options.limit || -1]);
           }
+          if (options.sortOrder === 1) {
+            return _.bind.apply(null, [self.redis.zrangebyscore, self.redis].concat(params));
+          }
           return _.bind.apply(null, [self.redis.zrevrangebyscore, self.redis].concat(params));
         } else {
           var start = options.offset || 0;
           var stop = options.limit ? (start + options.limit - 1) : -1;
+          if (options.sortOrder === 1) {
+            return _.bind(self.redis.zrange, self.redis, setKey, start, stop);
+          }
           return _.bind(self.redis.zrevrange, self.redis, setKey, start, stop);
         }
       }
