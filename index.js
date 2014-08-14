@@ -324,6 +324,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
   readFromIndex: function(collection, options, cb) {
     var self = this;
     var setKey = options.indexKey || collection.indexKey;
+
     var done = function(err, data) {
       var models = [];
       var i = 0;
@@ -389,8 +390,56 @@ _.extend(RedisDb.prototype, Db.prototype, {
       return _.bind(self.redis.smembers, self.redis, setKey);
     };
 
-    var readFn = getReadFn();
+    // TODO: handle sort order
+    var readWithRank = function(_done) {
+      debug('readWithRank');
+      if (!collection.indexSort) throw new Error('Cannot read rank of non-sorted set');
+      var id = options.before_id ? options.before_id : options.after_id;
+      // by default order set descending
+      var order = options.sortOrder ? options.sortOrder : - 1;
+      var rankFn = 'zrank';
+      var rangeFn = 'zrange';
+      var start;
+      var stop;
+      if (order === -1) {
+        rankFn = 'zrevrank';
+        rangeFn = 'zrevrange';
+      }
+      // first: read rank for given id
+      self.redis[rankFn](setKey, id, function(err, rank) {
+        //debug('got rank: %s for id: %s, using %s %s', rank, id, rankFn, rangeFn);
+        if (options.after_id) {
+          start = rank + 1;
+          stop = options.limit ? (start + options.limit -1) : - 1;
+
+        } else if (options.before_id) {
+          if (rank === 0) {
+            // there`s nothing before given id
+            return _done(null, []);
+          }
+          if (order === 1 && options.limit) {
+            start = rank - 1;
+          } else {
+            start = 0;
+          }
+          stop = rank - 1;
+          if (options.limit) stop = start -1 + options.limit;
+        }
+
+        var params = [setKey, start, stop];
+        if (options.score && options.score.conversion) params.push('WITHSCORES');
+        params.push(_done);
+
+        // second: read results with zrevrange or zrange
+        self.redis[rangeFn].apply(self.redis, params);
+      });
+    };
+
     debug('reading keys from: ' + setKey);
+    if (options.before_id || options.after_id) {
+      return readWithRank(done);
+    }
+    var readFn = getReadFn();
     readFn(done);
   },
 
