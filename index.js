@@ -324,6 +324,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
   readFromIndex: function(collection, options, cb) {
     var self = this;
     var setKey = options.indexKey || collection.indexKey;
+    var dynamicSorted = false;
 
     var done = function(err, data) {
       var models = [];
@@ -344,6 +345,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
       // disable sort by default here, since it's expected that redis set was sorted
       if (collection.indexSort) setOpts.sort = false;
       var opts = _.extend(setOpts, options);
+      if (dynamicSorted) opts.sort = false;
       collection.set(models, opts);
       return cb(err, models);
     };
@@ -375,6 +377,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
         }
       }
       if (options.sort && collection.model.prototype.redis_type === 'hash') {
+        dynamicSorted = true;
         var m = new collection.model();
         var idKey = self.getIdKey(m);
         var parsedSort = utils.parseSort(options.sort);
