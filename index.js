@@ -459,6 +459,11 @@ _.extend(RedisDb.prototype, Db.prototype, {
       params.push('WEIGHTS');
       params.push.apply(params, options.weights);
     }
+    // by default use MAX aggregate option (redis default is SUM)
+    if (collection.indexSort) {
+      params.push('AGGREGATE', 'MAX');
+    }
+
     var unionFn = collection.indexSort ?
       _.bind(this.redis.zunionstore, this.redis) :
       _.bind(this.redis.sunionstore, this.redis);
