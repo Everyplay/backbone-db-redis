@@ -327,6 +327,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
     var dynamicSorted = false;
 
     var done = function(err, data) {
+      data = data || []; // Data might be null on errors
       var models = [];
       var i = 0;
       while (i < data.length) {
@@ -383,6 +384,11 @@ _.extend(RedisDb.prototype, Db.prototype, {
         var parsedSort = utils.parseSort(options.sort);
         var sortParams = idKey + ':*->' + parsedSort.sortProp;
         params = [setKey, 'BY', sortParams];
+
+        if (options.limit_query !== false && typeof options.limit !== "undefined") {
+          params.push("LIMIT", options.offset || 0, options.limit);
+        }
+
         if (parsedSort.sortOrder === -1) {
           params.push('DESC');
         }
@@ -470,7 +476,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
     unionFn(params, function(err) {
       self.redis.expire(unionKey, 300);
       options.indexKey = unionKey;
-      return self.readFromIndex(collection, options, cb);
+      return self.readFromIndex(collection, _.extend({limit_query: false}, options), cb);
     });
   },
 
