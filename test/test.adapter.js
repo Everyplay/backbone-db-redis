@@ -252,6 +252,24 @@ describe('RedisDB redis adapter', function() {
       });
   });
 
+  it('should fetch from customIndex sorting by value set to customsort with offset and limit', function() {
+    var opts = {
+      sort: 'a',
+      customSort: {
+        a: 'customsort:*'
+      },
+      limit: 2,
+      offset: 1
+    };
+    var coll = new CustomIndexedHashCollection();
+    return coll
+      .fetch(opts)
+      .then(function() {
+        coll.length.should.equal(2);
+        coll.at(0).get('a').should.equal(125);
+      });
+  });
+
   it('should defer to customIndex with where params', function() {
     var opts = {
       where: {
