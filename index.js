@@ -385,8 +385,8 @@ _.extend(RedisDb.prototype, Db.prototype, {
         var sortParams = idKey + ':*->' + parsedSort.sortProp;
         params = [setKey, 'BY', sortParams];
 
-        if (options.limit_query !== false && typeof options.limit !== "undefined") {
-          params.push("LIMIT", options.offset || 0, options.limit);
+        if (options.limit_query !== false && options.offset) {
+          params.push("LIMIT", options.offset || 0, options.limit || -1);
         }
 
         if (parsedSort.sortOrder === -1) {

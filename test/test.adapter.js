@@ -202,12 +202,30 @@ describe('RedisDB redis adapter', function() {
       });
   });
 
+  it('should read from index sorted by `a` with offset', function() {
+    return index
+      .readFromIndex({sort: 'a', offset: 1})
+      .then(function() {
+        index.length.should.equal(2);
+        index.at(0).get('a').should.equal(125);
+      });
+  });
+
   it('should read from index sorted by `-a`', function() {
     return index
       .readFromIndex({sort: '-a'})
       .then(function() {
         index.length.should.equal(3);
         index.at(0).get('a').should.equal(226);
+      });
+  });
+
+  it('should read from index sorted by `-a` with offset', function() {
+    return index
+      .readFromIndex({sort: '-a', offset: 1})
+      .then(function() {
+        index.length.should.equal(2);
+        index.at(0).get('a').should.equal(125);
       });
   });
 
