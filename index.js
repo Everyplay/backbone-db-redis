@@ -495,7 +495,11 @@ _.extend(RedisDb.prototype, Db.prototype, {
   // removes the index completely
   removeIndex: function(collection, options, cb) {
     var setKey = collection.indexKey;
-    this.redis.del(setKey, cb);
+    if (options.indexBackupKey) {
+      this.redis.rename(setKey, options.indexBackupKey, cb);
+    } else {
+      this.redis.del(setKey, cb);
+    }
   },
 
   existsInIndex: function(collection, model, options, cb) {
