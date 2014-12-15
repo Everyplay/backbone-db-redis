@@ -260,18 +260,7 @@ describe('Test IndexedCollection', function () {
       }).otherwise(done);
   });
 
-  it('should remove index', function(done) {
-    collection = new TestCollection();
-    var fns = [
-      _.bind(collection.destroyAll, collection),
-      _.bind(collection.readFromIndex, collection)
-    ];
-    sequence(fns)
-      .then(function() {
-        assert.equal(collection.length, 0);
-        done();
-      }).otherwise(done);
-  });*/
+  */
 
   describe('before_id & after_id', function() {
     it('should read ids with after_id', function() {
@@ -480,4 +469,44 @@ describe('Test IndexedCollection', function () {
     });
   });
 
+  describe('removeIndex', function() {
+
+    var collection = new TestCollection();
+    var collection2 = new TestCollection2();
+
+    before(function() {
+      return collection
+        .create({data: 'eee', score: 0})
+        .then(function(model) {
+          return collection.addToIndex(model);
+        });
+    });
+
+    it('should back up the index given option indexBackupKey', function() {
+      var model = collection.at(0);
+      return collection
+        .destroyAll({indexBackupKey: collection2.indexKey})
+        .then(function() {
+          return when.join(
+            collection.readFromIndex(),
+            collection2.exists(model)
+          );
+        }).then(function(res) {
+          collection.length.should.equal(0);
+          res[1].should.be.true;
+        });
+    });
+
+    it('should remove index', function(done) {
+      var fns = [
+        _.bind(collection2.destroyAll, collection2),
+        _.bind(collection2.readFromIndex, collection2)
+      ];
+      sequence(fns)
+        .then(function() {
+          assert.equal(collection2.length, 0);
+          done();
+        }).otherwise(done);
+    });
+  });
 });
