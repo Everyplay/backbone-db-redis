@@ -16,7 +16,7 @@ MOCHA-OPTS = --reporter $(REPORTER) \
 		--recursive \
 		--colors
 
-test: lint
+test:
 	@NODE_ENV=$(ENV) $(BIN)/mocha \
 		$(MOCHA-OPTS) \
 		$(GREP_CMND)

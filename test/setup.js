@@ -69,6 +69,7 @@ exports.IndexedByDateModel = MyModel.extend({
   ]
 });
 
+// TODO there should be an 'interface' for this
 exports.TestIndexedCollection = MyCollection.extend({
   indexDb: store,
   indexKey: 'test:i:Foo:relation',
@@ -128,6 +129,10 @@ exports.TestIndexedCollection = MyCollection.extend({
    */
   exists: function(model, options) {
     return this._callAdapter('existsInIndex', options, model);
+  },
+
+  score: function(model, options) {
+    return this._callAdapter('score', options, model);
   },
 
   /*

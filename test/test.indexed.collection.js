@@ -234,6 +234,15 @@ describe('Test IndexedCollection', function () {
       }).otherwise(done);
   });
 
+  it('should get score for model', function() {
+    var model = collection.at(0);
+    return collection
+      .score(model)
+      .then(function(score) {
+        Number(score).should.equal(22);
+      });
+  });
+
   /*
   it('should remove model from index', function(done) {
     var model = collection.at(0);
