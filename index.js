@@ -1,5 +1,5 @@
 var _ = require('lodash');
-var Backbone = require('backbone');
+var Backbone = require('backdash');
 var Db = require('backbone-db');
 var redis = require('redis');
 var debug = require('debug')('backbone-db-redis');

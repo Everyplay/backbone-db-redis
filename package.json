@@ -12,14 +12,12 @@
   "author": "Nomon",
   "license": "MIT",
   "dependencies": {
-    "lodash": "~2.4.1",
-    "backbone": "~1.1.0",
-    "redis": "~0.10",
-    "debug": "~0.8",
-    "backbone-promises": "~0.2",
-    "when": "~3.1",
-    "backbone-db": "~0.4",
-    "async": "^0.9.0"
+    "backbone-db": "^0.5.4",
+    "backbone-promises": "^0.2.9",
+    "backdash": "^1.1.2-2.4.1",
+    "debug": "^2.1.2",
+    "lodash": "^3.5.0",
+    "redis": "^0.12.1"
   },
   "devDependencies": {
     "babel-eslint": "^2.0.0",
@@ -27,6 +25,7 @@
     "eslint": "^0.16.2",
     "husky": "^0.7.0",
     "istanbul": "~0.2",
-    "mocha": "~1.18"
+    "mocha": "~1.18",
+    "when": "^3.7.2"
   }
 }
