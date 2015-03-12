@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var RedisDb = require('../');
-var Backbone = require('backbone');
 var Promises = require('backbone-promises');
 var Model = Promises.Model;
 var Collection = Promises.Collection;
@@ -40,7 +39,7 @@ var IndexedModel = exports.IndexedModel = MyModel.extend({
   ]
 });
 
-var IndexedCollection = exports.IndexedCollection = MyCollection.extend({
+exports.IndexedCollection = MyCollection.extend({
   model: IndexedModel
 });
 
@@ -48,10 +47,10 @@ var fixtures = [
   {id: 1, value: 1, name: 'a', platforms: ['android', 'ios']},
   {id: 2, value: 2, name: 'b', platforms: ['ios']},
   {id: 3, value: 3, name: 'c', platforms: ['android']},
-  {id: 4, value: 2, name: 'c', platforms: ['ios']},
+  {id: 4, value: 2, name: 'c', platforms: ['ios']}
 ];
 
-var IndexedByDateModel = exports.IndexedByDateModel = MyModel.extend({
+exports.IndexedByDateModel = MyModel.extend({
   indexes: [
     {
       property: 'id',
@@ -70,7 +69,7 @@ var IndexedByDateModel = exports.IndexedByDateModel = MyModel.extend({
   ]
 });
 
-var TestIndexedCollection = exports.TestIndexedCollection = MyCollection.extend({
+exports.TestIndexedCollection = MyCollection.extend({
   indexDb: store,
   indexKey: 'test:i:Foo:relation',
 
@@ -78,7 +77,7 @@ var TestIndexedCollection = exports.TestIndexedCollection = MyCollection.extend(
     return model.get('score');
   },
 
-  /**
+  /*
    * Adds a new model to the index. Only specified attribute is indexed.
    * Db adapter returns a Promise
    */
@@ -89,7 +88,7 @@ var TestIndexedCollection = exports.TestIndexedCollection = MyCollection.extend(
     return this._callAdapter('addToIndex', options, model);
   },
 
-  /**
+  /*
    * Read model ids from the index. Populates collection models with ids,
    * for fetching from the main storage.
    */
@@ -97,7 +96,7 @@ var TestIndexedCollection = exports.TestIndexedCollection = MyCollection.extend(
     return this._callAdapter('readFromIndex', options);
   },
 
-  /**
+  /*
    * Read from multiple indexes
    */
   readFromIndexes: function(options) {
@@ -109,7 +108,7 @@ var TestIndexedCollection = exports.TestIndexedCollection = MyCollection.extend(
     return nodefn.apply(_.bind(this.indexDb.readFromIndexes, this.indexDb), args);
   },
 
-  /**
+  /*
    * Removes a model from index
    */
   removeFromIndex: function(models, options) {
@@ -124,14 +123,14 @@ var TestIndexedCollection = exports.TestIndexedCollection = MyCollection.extend(
     return this._callAdapter('removeIndex', options);
   },
 
-  /**
+  /*
    *  Check if model exists in index
    */
   exists: function(model, options) {
     return this._callAdapter('existsInIndex', options, model);
   },
 
-  /**
+  /*
    * Get count of items in index
    */
   count: function(options) {

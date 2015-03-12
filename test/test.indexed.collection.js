@@ -4,9 +4,6 @@ var Promises = require('backbone-promises');
 var when = Promises.when;
 var sequence = require('when/sequence');
 var setup = require('./setup');
-var MyCollection = setup.MyCollection;
-var MyModel = setup.MyModel;
-var store = setup.store;
 var TestCollection = setup.TestIndexedCollection;
 
 var TestCollection2 = TestCollection.extend({

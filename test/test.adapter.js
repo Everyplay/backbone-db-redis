@@ -5,9 +5,6 @@ var Promises = require('backbone-promises');
 var Collection = Promises.Collection;
 var Model = Promises.Model;
 var Hash = require('../lib/hash');
-var SortedSet = require('../lib/sortedset');
-var List = require('../lib/list');
-var SetModel = require('../lib/set');
 var setup = require('./setup');
 var redis = setup.store.redis;
 var async = require('async');
@@ -72,7 +69,7 @@ describe('RedisDB redis adapter', function() {
       collection.at(0).destroy(),
       collection.at(1).destroy(),
       collection.at(2).destroy(),
-      index.destroyAll(),
+      index.destroyAll()
     ];
     return Promises.when.all(fns).then(function() {
       setup.clearDb(next);
@@ -174,7 +171,7 @@ describe('RedisDB redis adapter', function() {
         };
         return h.save(null, saveOpts).then(function() {
           return h.fetch();
-        }).then(function(){
+        }).then(function() {
           h.get('a').should.equal(226);
         });
       });
@@ -239,8 +236,8 @@ describe('RedisDB redis adapter', function() {
           fns.push(_.bind(redis.sadd, redis, 'tests:i:custom', model.id));
           fns.push(_.bind(redis.set, redis, 'tests:customsort:' + model.id, 500 - model.get('a')));
         });
-        async.parallel(fns, function(err, res) {
-          next();
+        async.parallel(fns, function(err) {
+          next(err);
         });
       });
   });
@@ -270,7 +267,7 @@ describe('RedisDB redis adapter', function() {
       });
   });
 
-  it('should fetch from customIndex sorting by value set to customsort with offset and limit', function() {
+  it('should fetch from customIndex with custom sort, offset and limit', function() {
     var opts = {
       sort: 'a',
       customSort: {

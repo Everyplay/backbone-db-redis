@@ -1,11 +1,9 @@
 ENV = test
 REPORTER = spec
 BIN = node_modules/.bin
-SRC_FILES = $(shell find .  -type f \( -name "*.js" ! \
-	-path "*node_modules*" ! -path "*lcov-report*" \))
 
 # Use grep to run only tests with keywords:
-# make test-server GREP=events
+# make test GREP=events
 ifeq ($(GREP), )
 	GREP_CMND =
 else
@@ -18,20 +16,15 @@ MOCHA-OPTS = --reporter $(REPORTER) \
 		--recursive \
 		--colors
 
-test: jshint jscs
+test: lint
 	@NODE_ENV=$(ENV) $(BIN)/mocha \
 		$(MOCHA-OPTS) \
 		$(GREP_CMND)
 .PHONY: test
 
-jshint:
-	@$(BIN)/jshint $(SRC_FILES)
-.PHONY: jshint
-
-jscs:
-	@$(BIN)/jscs .
-.PHONY: jscs
-
+lint:
+	npm run lint
+.PHONY: lint
 
 ## Coverage:
 

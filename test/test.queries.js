@@ -1,6 +1,5 @@
 var assert = require('assert');
 var _ = require('lodash');
-var Promises = require('backbone-promises');
 var util = require('util');
 var when = require('when');
 var setup = require('./setup');
@@ -23,8 +22,6 @@ var inDescendingOrder = function(arr) {
 };
 
 describe('Query tests', function() {
-  var testModel;
-
   before(function(done) {
     setup.insertFixtureData(collection, done);
   });
@@ -75,7 +72,7 @@ describe('Query tests', function() {
   it('should fetch models with limit & offset', function(done) {
     var opts = {
       limit: 2,
-      offset: 1,
+      offset: 1
     };
     collection
       .fetch(opts)
@@ -116,7 +113,6 @@ describe('Query tests', function() {
   });
 
   it('should fetch models with after_id', function(done) {
-    //TODO
     var opts = {
       after_id: 2,
       sort: 'value'

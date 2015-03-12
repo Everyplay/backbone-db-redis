@@ -248,12 +248,13 @@ _.extend(RedisDb.prototype, Db.prototype, {
       return this.create(model, options, callback);
     }
     var cmd = this.getSaveCommand(model, options);
-    cmd.args.push(function(err, res) {
+    cmd.args.push(function(err) {
       if (model.collection) {
         var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
         debug('adding model ' + modelKey + ' to ' + setKey);
-        self.redis.sadd(setKey, modelKey, function(err, res) {
+        self.redis.sadd(setKey, modelKey, function(err) {
+          if (err) return callback(err);
           self._updateIndexes(model, options, callback);
         });
       } else {
@@ -278,14 +279,14 @@ _.extend(RedisDb.prototype, Db.prototype, {
     options.wait = true;
     var self = this;
     var key = this.getIdKey(model, options);
-    debug("DESTROY: " + key);
+    debug('DESTROY: ' + key);
     if (model.isNew()) {
       return false;
     }
 
     function delKey() {
       debug('removing key: ' + key);
-      self.redis.del(key, function(err, res) {
+      self.redis.del(key, function(err) {
         callback(err, model.toJSON());
       });
     }
@@ -293,12 +294,13 @@ _.extend(RedisDb.prototype, Db.prototype, {
     this._updateIndexes(model, _.extend({
       operation: 'delete'
     }, options), function(err) {
+      if (err) return callback(err);
       if (model.collection) {
         var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
         debug('removing model ' + modelKey + ' from ' + setKey);
-        self.redis.srem(setKey, modelKey, function(err, res) {
-          if (err) return callback(err);
+        self.redis.srem(setKey, modelKey, function(remErr) {
+          if (remErr) return callback(remErr);
           delKey();
         });
       } else {
@@ -368,14 +370,14 @@ _.extend(RedisDb.prototype, Db.prototype, {
             return _.bind.apply(null, [self.redis.zrangebyscore, self.redis].concat(params));
           }
           return _.bind.apply(null, [self.redis.zrevrangebyscore, self.redis].concat(params));
-        } else {
-          var start = options.offset || 0;
-          var stop = options.limit ? (start + options.limit - 1) : -1;
-          if (options.sortOrder === 1) {
-            return _.bind(self.redis.zrange, self.redis, setKey, start, stop);
-          }
-          return _.bind(self.redis.zrevrange, self.redis, setKey, start, stop);
         }
+
+        var start = options.offset || 0;
+        var stop = options.limit ? (start + options.limit - 1) : -1;
+        if (options.sortOrder === 1) {
+          return _.bind(self.redis.zrange, self.redis, setKey, start, stop);
+        }
+        return _.bind(self.redis.zrevrange, self.redis, setKey, start, stop);
       }
       if (options.sort && collection.model.prototype.redis_type === 'hash') {
         dynamicSorted = true;
@@ -405,7 +407,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
       if (!collection.indexSort) throw new Error('Cannot read rank of non-sorted set');
       var id = options.before_id ? options.before_id : options.after_id;
       // by default order set descending
-      var order = options.sortOrder ? options.sortOrder : - 1;
+      var order = options.sortOrder ? options.sortOrder : -1;
       var rankFn = 'zrank';
       var rangeFn = 'zrange';
       var start;
@@ -416,10 +418,12 @@ _.extend(RedisDb.prototype, Db.prototype, {
       }
       // first: read rank for given id
       self.redis[rankFn](setKey, id, function(err, rank) {
-        //debug('got rank: %s for id: %s, using %s %s', rank, id, rankFn, rangeFn);
+        // debug('got rank: %s for id: %s, using %s %s', rank, id, rankFn, rangeFn);
         if (options.after_id) {
           start = rank + 1;
-          stop = options.limit ? (start + options.limit -1) : - 1;
+          stop = options.limit
+            ? (start + options.limit - 1)
+            : -1;
 
         } else if (options.before_id) {
           if (rank === 0) {
@@ -432,7 +436,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
             start = 0;
           }
           stop = rank - 1;
-          if (options.limit) stop = start -1 + options.limit;
+          if (options.limit) stop = start - 1 + options.limit;
         }
 
         var params = [setKey, start, stop];
@@ -459,7 +463,9 @@ _.extend(RedisDb.prototype, Db.prototype, {
     var self = this;
     var unionKey = options.unionKey;
     var params = _.clone(options.indexKeys);
-    if (collection.indexSort) params.unshift(options.indexKeys.length); // how many sets to union
+    if (collection.indexSort) {
+      params.unshift(options.indexKeys.length); // how many sets to union
+    }
     params.unshift(unionKey); // where to store
     if (options.weights) {
       params.push('WEIGHTS');
@@ -474,6 +480,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
       _.bind(this.redis.zunionstore, this.redis) :
       _.bind(this.redis.sunionstore, this.redis);
     unionFn(params, function(err) {
+      if (err) return cb(err);
       self.redis.expire(unionKey, 300);
       options.indexKey = unionKey;
       return self.readFromIndex(collection, _.extend({limit_query: false}, options), cb);
@@ -553,6 +560,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
     indexing.updateIndexes(indexingOpts, callback);
   }
 });
+
 RedisDb.sync = RedisDb.prototype.sync;
 RedisDb.Hash = require('./lib/hash');
 module.exports = RedisDb;
