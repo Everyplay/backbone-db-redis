@@ -1,12 +1,11 @@
-var _ = require('lodash'),
-  Backbone = require('backbone'),
-  Db = require('backbone-db'),
-  redis = require('redis'),
-  debug = require('debug')('backbone-db-redis'),
-  indexing = require('./lib/indexing'),
-  query = require('./lib/query'),
-  utils = require('./lib/utils');
-
+var _ = require('lodash');
+var Backbone = require('backbone');
+var Db = require('backbone-db');
+var redis = require('redis');
+var debug = require('debug')('backbone-db-redis');
+var indexing = require('./lib/indexing');
+var query = require('./lib/query');
+var utils = require('./lib/utils');
 
 var RedisDb = Backbone.RedisDb = function(name, client) {
   this.name = name ||  '';
@@ -19,9 +18,8 @@ var RedisDb = Backbone.RedisDb = function(name, client) {
 Backbone.RedisDb.prototype.key = function(key) {
   if (this.name === '') {
     return key;
-  } else {
-    return this.name + ':' + key;
   }
+  return this.name + ':' + key;
 };
 
 var loadFnMap = {
@@ -45,15 +43,15 @@ _.extend(RedisDb.prototype, Db.prototype, {
     }
   },
 
-  _getLoadFn: function(model, options) {
+  _getLoadFn: function(model) {
     var type = model.redis_type || 'string';
-    return loadFnMap[type.toLowerCase()] || 'get';
+    return loadFnMap[type.toLowerCase()] || 'get';
   },
-  _getSaveFn: function(model, options) {
+  _getSaveFn: function(model) {
     var type = model.redis_type || 'string';
-    return saveFnMap[type.toLowerCase()] || 'set';
+    return saveFnMap[type.toLowerCase()] || 'set';
   },
-  _getIncFn: function(model, options) {
+  _getIncFn: function(model) {
     var type = model.redis_type || 'string';
     if (!incFnMap.hasOwnProperty(type)) {
       throw new Error('Cannot inc with type: ' + type);
@@ -62,7 +60,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
   },
   _getSaveArgs: function(model, options, fn) {
     var args = [this.getIdKey(model, options)];
-    options = options || {};
+    options = options || {};
     if (fn === 'hmset') {
       var data = model.toJSON();
       var out = {};
@@ -77,7 +75,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
   },
   _getLoadArgs: function(model, options) {
     var args = [this.getIdKey(model, options)];
-    options = options || {};
+    options = options || {};
     return args;
   },
   getFetchCommand: function(model, options) {
@@ -108,9 +106,8 @@ _.extend(RedisDb.prototype, Db.prototype, {
     }
     if (this.name !== '') {
       return this.name + (key ? ':' + key : '');
-    } else {
-      return key;
     }
+    return key;
   },
 
   // get Redis key for set, where key/value is stored
@@ -119,9 +116,9 @@ _.extend(RedisDb.prototype, Db.prototype, {
     var setKey = 'i:' + baseKey + ':' + key + ':' + val;
     if (this.name !== '') {
       return this.name + ':' + setKey;
-    } else {
-      return setKey;
     }
+
+    return setKey;
   },
 
   // get Redis key for set for sorted property
@@ -130,9 +127,8 @@ _.extend(RedisDb.prototype, Db.prototype, {
     var setKey = 'i:' + baseKey + ':' + sortProp;
     if (this.name !== '') {
       return this.name + ':' + setKey;
-    } else {
-      return setKey;
     }
+    return setKey;
   },
 
   findAll: function(model, options, callback) {
@@ -165,7 +161,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
         .value();
       var objectKeys = Object.keys(model.attributes);
       var searchAttrs = {};
-      var allIndexed = _.each(objectKeys, function(attr) {
+      _.each(objectKeys, function(attr) {
         if (indexedKeys.indexOf(attr) > -1) {
           searchAttrs[attr] = model.get(attr);
         }
@@ -186,8 +182,8 @@ _.extend(RedisDb.prototype, Db.prototype, {
         indexes: model.indexes,
         redis_type: model.redis_type
       };
-      query.queryModels(options, dbOpts, function(err, results) {
-        callback(err, results && results.length && results[0]);
+      query.queryModels(options, dbOpts, function(queryErr, results) {
+        callback(queryErr, results && results.length && results[0]);
       });
     }
   },
@@ -249,12 +245,13 @@ _.extend(RedisDb.prototype, Db.prototype, {
     }
     var cmd = this.getSaveCommand(model, options);
     cmd.args.push(function(err) {
+      if (err) return callback(err);
       if (model.collection) {
         var setKey = self.getIdKey(model.collection, {});
         var modelKey = model.get(model.idAttribute);
         debug('adding model ' + modelKey + ' to ' + setKey);
-        self.redis.sadd(setKey, modelKey, function(err) {
-          if (err) return callback(err);
+        self.redis.sadd(setKey, modelKey, function(addErr) {
+          if (addErr) return callback(addErr);
           self._updateIndexes(model, options, callback);
         });
       } else {
@@ -456,7 +453,7 @@ _.extend(RedisDb.prototype, Db.prototype, {
     readFn(done);
   },
 
-  /**
+  /*
    * Read from multiple sets, storing union in new set temporarily
    */
   readFromIndexes: function(collection, options, cb) {
