@@ -14,6 +14,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "backbone-db": "^0.5.4",
+    "backbone-db-indexing-adapter": "^0.1.1",
     "backbone-promises": "^0.2.9",
     "backdash": "^1.1.2-2.4.1",
     "debug": "^2.1.2",
