@@ -165,7 +165,7 @@ describe('Test IndexedCollection', function () {
       }).otherwise(done);
   });
 
-  it('should read from multiple indexes', function(done) {
+  it('should read from multiple indexes and store union', function(done) {
     var opts = {
       indexKeys: ['test:i:Foo:relation', 'test:i:Foo:relation2'],
       unionKey: 'test:i:UnionFoo'
@@ -243,6 +243,19 @@ describe('Test IndexedCollection', function () {
       });
   });
 
+  // TODO: improve this test
+  it('should read from multiple indexes and store their intersection', function() {
+    var opts = {
+      indexKeys: ['test:i:Foo:relation', 'test:i:Foo:relation2'],
+      intersectionKey: 'test:i:IntersectionFoo'
+    };
+    var c = new  TestCollection2();
+    return c
+      .readFromIndexes(opts)
+      .then(function() {
+        assert.equal(c.length, 0);
+      });
+  });
   /*
   it('should remove model from index', function(done) {
     var model = collection.at(0);
